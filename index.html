@@ -788,7 +788,7 @@
             
             // Gemini API 호출 함수 (JSON 형식 요청)
             async function getNewWordInfo(term) {
-                const apiKey = "AIzaSyAI6DEdREoWoXcWusRyzj2aHoHZxOih4aU"; // API 키는 비워 둡니다.
+                const apiKey = ""; // API 키는 비워 둡니다.
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
                 
                 const prompt = `'${term}'라는 단어에 대한 정보를 JSON 형식으로 제공해줘. 만약 단어를 찾을 수 없다면, {"error": "not_found"} 라고 응답해줘. 형식은 다음과 같아: {"hanja": "漢字", "meaning": "의미", "example": "예문"}`;
@@ -822,7 +822,7 @@
             }
             
             async function getGeminiResponse(prompt) {
-                const apiKey = "AIzaSyAI6DEdREoWoXcWusRyzj2aHoHZxOih4aU"; // API 키는 비워 둡니다.
+                const apiKey = ""; // API 키는 비워 둡니다.
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
                 
                 const payload = {
