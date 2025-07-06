@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <!-- (head 부분은 이전과 동일) -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>정원의 사자성어 및 한자어 학습장</title>
@@ -10,7 +9,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* (style 부분은 이전과 동일) */
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .modal-enter { animation: fadeIn 0.3s ease-out; }
+        .modal-leave { animation: fadeOut 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+        .status-learned { border-left: 5px solid #4ade80; }
+        .status-review { border-left: 5px solid #facc15; }
+        .status-not-learned { border-left: 5px solid #e5e7eb; }
+        .trophy.unlocked { color: #f59e0b; transform: scale(1.1); transition: color 0.3s, transform 0.3s; }
+        .trophy { transition: color 0.3s, transform 0.3s; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #3498db; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -19,7 +35,6 @@
         <header class="text-center mb-4 relative">
             <h1 class="text-4xl md:text-5xl font-bold text-gray-800">정원의 사자성어 및 한자어 학습장</h1>
             <p class="text-lg text-gray-600 mt-2">노력의 발자취를 따라, 지혜의 숲을 거닐다</p>
-            <!-- [추가] 설정 아이콘 -->
             <button id="settings-btn" class="absolute top-0 right-0 p-2 text-gray-500 hover:text-gray-800" title="API 키 설정">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -28,25 +43,51 @@
             </button>
         </header>
 
-        <!-- (나머지 HTML 구조는 이전과 동일) -->
         <div id="auth-container" class="text-center mb-4 p-4 bg-white rounded-lg shadow-sm border">
-            <!-- ... -->
+            <p id="auth-status" class="text-gray-600 mb-2">Google 계정으로 로그인하여 데이터를 여러 기기에서 동기화하세요.</p>
+            <button id="authorize_button" style="display: none;" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition">Google 계정으로 로그인</button>
+            <button id="signout_button" style="display: none;" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition">로그아웃</button>
         </div>
+
         <div id="dashboard" class="bg-white p-6 rounded-2xl shadow-md mb-8 border border-gray-200">
-            <!-- ... -->
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">정원님의 학습 현황</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4">
+                <div class="bg-blue-50 p-3 rounded-lg"><p class="text-sm text-blue-600 font-semibold">총 단어</p><p id="total-count" class="text-2xl font-bold text-blue-800">0</p></div>
+                <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-600 font-semibold">학습 완료</p><p id="learned-count" class="text-2xl font-bold text-green-800">0</p></div>
+                <div class="bg-yellow-50 p-3 rounded-lg"><p class="text-sm text-yellow-600 font-semibold">복습 필요</p><p id="review-count" class="text-2xl font-bold text-yellow-800">0</p></div>
+                <div class="bg-gray-100 p-3 rounded-lg"><p class="text-sm text-gray-600 font-semibold">미학습</p><p id="not-learned-count" class="text-2xl font-bold text-gray-800">0</p></div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-4"><div id="progress-bar" class="bg-green-500 h-4 rounded-full transition-all duration-500 text-center text-white text-xs font-bold flex items-center justify-center" style="width: 0%"></div></div>
+            <div class="flex justify-between items-center">
+                <p class="text-sm text-gray-600">학습 진행률: <span id="progress-percent" class="font-bold">0%</span></p>
+                <div id="achievements" class="flex space-x-3 text-gray-300">
+                    <div class="trophy" id="trophy-1" title="100개 학습 완료!"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M17.926 5.574a1 1 0 00-1.25-.093l-2.032.942a.5.5 0 01-.588-.048l-1.03-1.03a.5.5 0 010-.707l1.03-1.03a.5.5 0 01.588-.048l2.032.942a1 1 0 001.25-.093l.5-.5a1 1 0 00-1.414-1.414l-.5.5a1 1 0 00-.093 1.25l.942 2.032a.5.5 0 01-.048.588l-1.03 1.03a.5.5 0 01-.707 0l-1.03-1.03a.5.5 0 01-.048-.588l.942-2.032a1 1 0 00-.093-1.25l-.5-.5a1 1 0 00-1.414-1.414l.5.5c.32.32.385.8.18 1.16l-1.042 1.89a.5.5 0 01-.68.18l-1.89-1.042a.833.833 0 00-1.16.18l-.5.5a1 1 0 001.414 1.414l.5-.5c.32-.32.8-.385 1.16-.18l1.89 1.042a.5.5 0 01.18.68l-1.042 1.89a.833.833 0 00.18 1.16l.5.5a1 1 0 001.414-1.414l-.5-.5a.833.833 0 00-1.16-.18L8.95 10.61a.5.5 0 01-.68-.18l-1.89-1.042a.833.833 0 00-1.16.18l-.5.5a1 1 0 101.414 1.414l.5-.5c.32-.32.385-.8.18-1.16l-1.042-1.89a.5.5 0 01.18-.68l1.89-1.042a.833.833 0 00.18-1.16l-.5-.5A1 1 0 002.5 4.5l.5.5c.32.32.8.385 1.16.18l1.89-1.042a.5.5 0 01.68-.18l1.042 1.89a.833.833 0 001.16.18l.5-.5a1 1 0 00-1.414-1.414l-.5.5a.833.833 0 00-.18 1.16l-1.042 1.89a.5.5 0 01-.68.18L4.39 8.95a.833.833 0 00-1.16.18l-.5.5a1 1 0 001.414 1.414l.5-.5a.833.833 0 00.18-1.16l1.042-1.89a.5.5 0 01.68-.18l1.89 1.042a.833.833 0 001.16.18l.5.5a1 1 0 00-1.414-1.414l-.5-.5a.833.833 0 00-1.16-.18l-1.89 1.042a.5.5 0 01-.68-.18l-1.042-1.89a.833.833 0 00-1.16-.18l-.5.5a1 1 0 001.414 1.414l.5-.5c.32-.32.385-.8.18-1.16L3.34 9.39a.5.5 0 01.18-.68l2.032-.942a.5.5 0 01.588.048l1.03 1.03a.5.5 0 010 .707l-1.03 1.03a.5.5 0 01-.588.048l-2.032-.942a1 1 0 00-1.25.093l-.5.5a1 1 0 001.414 1.414l.5-.5a1 1 0 00.093-1.25l-.942-2.032a.5.5 0 01.048-.588l1.03-1.03a.5.5 0 01.707 0l1.03 1.03a.5.5 0 01.048.588l-.942 2.032a1 1 0 00.093 1.25l.5.5a1 1 0 001.414 1.414l-.5-.5a.833.833 0 00-1.16-.18l-1.042-1.89a.5.5 0 01-.18-.68l1.042-1.89a.833.833 0 00-.18-1.16l-.5-.5a1 1 0 00-1.414 1.414l.5.5c.32.32.8.385 1.16.18l1.89-1.042a.5.5 0 01.68-.18l1.042 1.89c.205.37.74.435 1.16.18l.5-.5a1 1 0 00-1.414-1.414l-.5.5a.833.833 0 00-.18 1.16l1.042 1.89a.5.5 0 01-.18.68l-1.89 1.042a.833.833 0 00-.18 1.16l.5.5a1 1 0 101.414 1.414l.5-.5a.833.833 0 00.18-1.16l-1.042-1.89a.5.5 0 01.18-.68l1.89-1.042a.833.833 0 00.18-1.16l-.5-.5a1 1 0 00-1.414 1.414l.5.5c.32.32.8.385 1.16.18l2.032.942a.5.5 0 01.588-.048l1.03-1.03a.5.5 0 010-.707l-1.03-1.03a.5.5 0 01-.588-.048L17.926 5.574zM10 18a8 8 0 100-16 8 8 0 000 16zm-5-8a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"/></svg></div>
+                    <div class="trophy" id="trophy-2" title="50% 학습 달성!"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg></div>
+                    <div class="trophy" id="trophy-3" title="모든 단어 학습 완료! 👑"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg></div>
+                </div>
+            </div>
         </div>
+
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-            <!-- ... -->
+            <div class="flex space-x-2 mb-4 md:mb-0" id="filter-buttons">
+                <button data-filter="all" class="filter-btn bg-blue-500 text-white px-4 py-2 rounded-full shadow">전체</button>
+                <button data-filter="learned" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full shadow">학습 완료</button>
+                <button data-filter="review" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full shadow">복습 필요</button>
+                <button data-filter="not-learned" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full shadow">미학습</button>
+            </div>
+            <div class="relative w-full md:w-2/5 flex">
+                <input type="text" id="search-input" placeholder="단어 검색 또는 추가..." class="w-full px-4 py-2 border border-gray-300 rounded-l-full focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <button id="search-btn" class="bg-blue-500 text-white px-4 py-2 rounded-r-full hover:bg-blue-600 transition"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+            </div>
         </div>
+
         <div id="card-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </div>
 
-    <!-- 단어 상세 정보 모달 -->
     <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50">
-        <!-- ... -->
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative transform transition-all max-h-[90vh] overflow-y-auto"></div>
     </div>
 
-    <!-- [추가] API 키 설정 모달 -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative">
             <button id="close-settings-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
@@ -66,9 +107,9 @@
     </div>
 
     <script>
-        // --- 초기 데이터 영역 ---
         const initialWordData = [
-            // 기존 데이터
+            // 여기에 721개의 모든 단어 데이터를 붙여넣으세요.
+            // 예시:
             { id: 1, word: '각골난망', hanja: '刻骨難忘', meaning: '은혜에 대한 고마움이 뼈에 사무쳐 잊히지 않음.', example: '어려울 때 도와주신 은혜는 각골난망입니다.' },
             { id: 2, word: '각주구검', hanja: '刻舟求劍', meaning: '융통성 없이 현실에 맞지 않는 낡은 생각을 고집하는 어리석음.', example: '변화하는 시장 상황에 대처하지 못하는 그의 방식은 각주구검과 같다.' },
             { id: 3, word: '간담상조', hanja: '肝膽相照', meaning: '서로의 속마음을 터놓고 가까이 사귐.', example: '우리는 간담상조하는 사이라 비밀이 없다.' },
@@ -120,7 +161,6 @@
             { id: 49, 'word': '단말마', 'hanja': '斷末魔', 'meaning': '숨이 끊어질 때의 모진 고통.', 'example': '그는 단말마의 비명을 질렀다.'},
             { id: 50, 'word': '대기만성', 'hanja': '大器晩成', 'meaning': '큰 그릇은 늦게 이루어진다는 뜻으로, 크게 될 사람은 늦게 성공함을 이르는 말.', 'example': '그는 오랜 무명 시절을 거친 대기만성의 배우다.'},
             { id: 372, 'word': '환기', 'hanja': '喚起', 'meaning': '주의나 여론, 생각 등을 불러일으킴.', 'example': '이 사건은 사회 문제에 대한 대중의 관심을 환기시켰다.' },
-            // 신규 추가 데이터
             { id: 373, word: '가렴주구', hanja: '苛斂誅求', meaning: '세금을 가혹하게 거두고, 무자비하게 재물을 빼앗음.', example: '탐관오리의 가렴주구에 백성들의 고통이 심했다.' },
             { id: 374, word: '도원결의', hanja: '桃園結義', meaning: '뜻이 맞는 사람끼리 하나의 목적을 이루기 위해 행동을 같이 할 것을 약속함.', example: '세 친구는 도원결의를 맺고 큰 뜻을 함께하기로 했다.' },
             { id: 375, word: '동가홍상', hanja: '同價紅裳', meaning: '같은 값이면 다홍치마라는 뜻으로, 이왕이면 더 좋은 것을 선택한다는 말.', example: '같은 값이면 동가홍상이라고, 더 예쁜 것을 골랐다.' },
@@ -128,7 +168,7 @@
             { id: 377, word: '동량지재', hanja: '棟梁之材', meaning: '집안이나 나라의 중대한 일을 맡을 만한 인재.', example: '그는 이 나라의 동량지재로 성장할 것이다.' },
             { id: 378, word: '동문서답', hanja: '東問西答', meaning: '동쪽을 묻는데 서쪽을 대답한다는 뜻으로, 묻는 말에 전혀 상관없는 엉뚱한 대답을 함.', example: '내 질문에 그는 계속 동문서답만 했다.' },
             { id: 379, word: '동병상련', hanja: '同病相憐', meaning: '어려운 처지에 있는 사람끼리 서로 동정하고 도움.', example: '같은 처지에 있는 사람들끼리 동병상련을 느꼈다.' },
-            { id: 380, word: '동분서주', hanja: '東奔西走', meaning: '사방으로 이리저리 몹시 바쁘게 돌아다님.', example: '그는 사업을 위해 동분서주하며 바쁘게 지냈다.' },
+            { id: 380, word: '동분서주', hanja: '東奔西走', meaning: '사방으로 이리저리 몹시 바쁘게 돌아다님.', 'example': '그는 사업을 위해 동분서주하며 바쁘게 지냈다.' },
             { id: 381, word: '동상이몽', hanja: '同床異夢', meaning: '겉으로는 같이 행동하면서도 속으로는 각각 다른 생각을 하고 있음을 이르는 말.', example: '겉으로는 협력하는 듯했지만, 그들은 동상이몽을 꾸고 있었다.' },
             { id: 382, word: '두문불출', hanja: '杜門不出', meaning: '문을 막고 나가지 않는다는 뜻으로, 집에만 있고 바깥출입을 아니함.', example: '큰 충격을 받은 그는 집에서 두문불출하고 있다.' },
             { id: 383, word: '등하불명', hanja: '燈下不明', meaning: '등잔 밑이 어둡다는 뜻으로, 가까이 있는 것을 오히려 잘 모름을 비유합니다.', example: '등하불명이라더니, 바로 책상 위에 있던 열쇠를 한참 찾았다.' },
@@ -415,7 +455,7 @@
             { id: 664, word: '세습', hanja: '世襲', meaning: '한 집안의 재산이나 신분, 직업 따위를 대대로 물려주고 물려받음.', example: '그 회사는 가족 경영을 통해 부를 세습하고 있다.' },
             { id: 665, word: '수행', hanja: '遂行', meaning: '맡은 일을 계획이나 명령대로 해냄.', example: '그는 맡은 임무를 성공적으로 수행했다.' },
             { id: 666, word: '순식간', hanja: '瞬息間', meaning: '눈을 한 번 깜박하거나 숨을 한 번 쉴 만한 아주 짧은 시간.', example: '사고는 순식간에 일어났다.' },
-            { id: 667, word: '시사적', hanja: '時事的', meaning: '그 당시에 일어난 여러 가지 사회 현상과 관련된 것.', example: '이 영화는 시사적인 문제를 다루고 있다.' },
+            { id: 667, '시사적', hanja: '時事的', meaning: '그 당시에 일어난 여러 가지 사회 현상과 관련된 것.', example: '이 영화는 시사적인 문제를 다루고 있다.' },
             { id: 668, word: '실질적', hanja: '實質的', meaning: '실제로 있는 본바탕과 같거나 그것에 근거하는 것.', example: '명목상의 사장이 아닌 실질적인 권한을 가진 사람이 필요하다.' },
             { id: 669, word: '심사', hanja: '審査', meaning: '자세하게 조사하여 등급이나 당락 따위를 결정함.', example: '엄격한 심사를 거쳐 최종 합격자가 결정되었다.' },
             { id: 670, word: '안식', hanja: '安息', meaning: '편안하게 쉼.', example: '그는 고향에서 영원한 안식을 찾았다.' },
@@ -472,15 +512,10 @@
             { id: 721, word: '희구', hanja: '希求', meaning: '바라고 구함.', example: '인간은 누구나 행복을 희구한다.' }
         ];
 
-        // --- Google Drive API 설정 ---
-        const CLIENT_ID = '598424628848-vh9hl5qlidvj8ahmlpdnd5r2equs0biv.apps.googleusercontent.com'; // ◀◀◀ 여기에 발급받은 클라이언트 ID를 붙여넣으세요!
-        
-        // (이하 모든 자바스크립트 코드를 아래 내용으로 교체)
-
-        // --- 전역 변수 및 설정 ---
         let wordData = [];
         let currentFilter = 'all';
         let isLoggedIn = false;
+        const CLIENT_ID = '598424628848-vh9hl5qlidvj8ahmlpdnd5r2equs0biv.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
         const VOCAB_FILE_NAME = 'jeongwon_vocab.json';
         let tokenClient;
@@ -488,93 +523,14 @@
         let gisInited = false;
         let isApiReady = false;
 
-        // --- [수정] Gemini API 호출 함수 ---
-        // API 키를 localStorage에서 읽어오는 함수
         function getGeminiApiKey() {
             return localStorage.getItem('geminiApiKey') || "";
         }
 
-        async function getNewWordInfo(term) {
+        async function callGeminiAPI(prompt, isJson = false) {
             const apiKey = getGeminiApiKey();
             if (!apiKey) {
                 alert("AI 기능을 사용하려면 먼저 설정(⚙️)에서 Gemini API 키를 입력해주세요.");
-                return { error: "api_key_missing" };
+                return isJson ? { error: "api_key_missing" } : "API 키가 설정되지 않았습니다.";
             }
-            // (이하 API 호출 로직은 동일)
-        }
-        
-        async function getGeminiResponse(prompt) {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) {
-                alert("AI 기능을 사용하려면 먼저 설정(⚙️)에서 Gemini API 키를 입력해주세요.");
-                return "API 키가 설정되지 않았습니다.";
-            }
-            // (이하 API 호출 로직은 동일)
-        }
-
-        // --- 애플리케이션 메인 로직 ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // [추가] 설정 모달 관련 이벤트 리스너
-            const settingsBtn = document.getElementById('settings-btn');
-            const settingsModal = document.getElementById('settings-modal');
-            const closeSettingsModalBtn = document.getElementById('close-settings-modal');
-            const apiKeyInput = document.getElementById('api-key-input');
-            const saveApiKeyBtn = document.getElementById('save-api-key');
-            const clearApiKeyBtn = document.getElementById('clear-api-key');
-
-            settingsBtn.addEventListener('click', () => {
-                apiKeyInput.value = getGeminiApiKey(); // 현재 저장된 키를 보여줌
-                settingsModal.classList.remove('hidden');
-            });
-
-            const closeSettingsModal = () => settingsModal.classList.add('hidden');
-            closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
-
-            saveApiKeyBtn.addEventListener('click', () => {
-                const newApiKey = apiKeyInput.value.trim();
-                if (newApiKey) {
-                    localStorage.setItem('geminiApiKey', newApiKey);
-                    alert('API 키가 저장되었습니다.');
-                    closeSettingsModal();
-                } else {
-                    alert('API 키를 입력해주세요.');
-                }
-            });
-
-            clearApiKeyBtn.addEventListener('click', () => {
-                localStorage.removeItem('geminiApiKey');
-                apiKeyInput.value = "";
-                alert('API 키가 삭제되었습니다.');
-            });
-
-            // (이하 기존 로직은 동일)
-            document.getElementById('authorize_button').onclick = handleAuthClick;
-            document.getElementById('signout_button').onclick = handleSignoutClick;
-
-            loadLocalData();
-
-            const script1 = document.createElement('script');
-            script1.src = 'https://apis.google.com/js/api.js';
-            script1.async = true;
-            script1.defer = true;
-            script1.onload = () => gapiLoaded();
-            document.body.appendChild(script1);
-
-            const script2 = document.createElement('script');
-            script2.src = 'https://accounts.google.com/gsi/client';
-            script2.async = true;
-            script2.defer = true;
-            script2.onload = () => gisLoaded();
-            document.body.appendChild(script2);
-        });
-
-        // (이하 모든 함수는 이전과 동일)
-        // gapiLoaded, initializeGapiClient, gisLoaded, checkApiReady, ...
-        // handleAuthClick, handleSignoutClick, updateAuthUI, ...
-        // getFileId, loadDataFromDrive, saveDataToDrive, ...
-        // loadLocalData, saveLocalData, saveData, ...
-        // initializeApp, updateDashboard, renderCards, ...
-        // addNewWord, openModal, closeModal, updateStatus, handleSearch
-    </script>
-</body>
-</html>
+            const apiUrl = `https://generativel
